@@ -63,25 +63,25 @@ impl OpenAIClient {
         Self::new_with_endpoint(endpoint, api_key)
     }
 
-    pub fn new_with_endpoint(api_endpoint: String, api_key: String,) -> Self {
+    pub fn new_with_endpoint(api_endpoint: String, api_key: String) -> Self {
         Self {
             api_endpoint,
             api_key,
             organization: None,
             proxy: None,
             timeout: None,
-            api_version:None,
+            api_version: None,
         }
     }
 
-    pub fn new_with_version(api_endpoint: String, api_key: String,api_version: String) -> Self {
+    pub fn new_with_version(api_endpoint: String, api_key: String, api_version: String) -> Self {
         Self {
             api_endpoint,
             api_key,
             organization: None,
             proxy: None,
             timeout: None,
-            api_version:Some(api_version),
+            api_version: Some(api_version),
         }
     }
 
@@ -105,7 +105,7 @@ impl OpenAIClient {
             organization: None,
             proxy: Some(proxy),
             timeout: None,
-            api_version: None
+            api_version: None,
         }
     }
 
@@ -117,20 +117,17 @@ impl OpenAIClient {
             organization: None,
             proxy: None,
             timeout: Some(timeout),
-            api_version: None
+            api_version: None,
         }
     }
 
     async fn build_request(&self, method: Method, path: &str) -> reqwest::RequestBuilder {
-        let url = format!("{}/{}", self.api_endpoint, path);
+        let mut url = format!("{}/{}", self.api_endpoint, path);
 
         // check for api version
-        let url = if self.api_version.is_some() {
-            format!("{}?api-version={:?}", url, self.api_version)
-        } else {
-            url
-        };
-
+        if let Some(api_version) = &self.api_version {
+            url = format!("{}?api-version={}", url, api_version)
+        }
 
         let client = Client::builder();
 
@@ -150,8 +147,7 @@ impl OpenAIClient {
 
         let mut request = client
             .request(method, url)
-            // .header("Content-Type", "application/json")
-            .header("Authorization", format!("Bearer {}", self.api_key));
+            .header("api-key", self.api_key.clone());
 
         if let Some(organization) = &self.organization {
             request = request.header("openai-organization", organization);
