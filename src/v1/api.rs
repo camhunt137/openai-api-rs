@@ -54,6 +54,7 @@ pub struct OpenAIClient {
     pub organization: Option<String>,
     pub proxy: Option<String>,
     pub timeout: Option<u64>,
+    pub api_version: Option<String>,
 }
 
 impl OpenAIClient {
@@ -62,13 +63,25 @@ impl OpenAIClient {
         Self::new_with_endpoint(endpoint, api_key)
     }
 
-    pub fn new_with_endpoint(api_endpoint: String, api_key: String) -> Self {
+    pub fn new_with_endpoint(api_endpoint: String, api_key: String,) -> Self {
         Self {
             api_endpoint,
             api_key,
             organization: None,
             proxy: None,
             timeout: None,
+            api_version:None,
+        }
+    }
+
+    pub fn new_with_version(api_endpoint: String, api_key: String,api_version: String) -> Self {
+        Self {
+            api_endpoint,
+            api_key,
+            organization: None,
+            proxy: None,
+            timeout: None,
+            api_version:Some(api_version),
         }
     }
 
@@ -80,6 +93,7 @@ impl OpenAIClient {
             organization: Some(organization),
             proxy: None,
             timeout: None,
+            api_version: None,
         }
     }
 
@@ -91,6 +105,7 @@ impl OpenAIClient {
             organization: None,
             proxy: Some(proxy),
             timeout: None,
+            api_version: None
         }
     }
 
@@ -102,11 +117,21 @@ impl OpenAIClient {
             organization: None,
             proxy: None,
             timeout: Some(timeout),
+            api_version: None
         }
     }
 
     async fn build_request(&self, method: Method, path: &str) -> reqwest::RequestBuilder {
         let url = format!("{}/{}", self.api_endpoint, path);
+
+        // check for api version
+        let url = if self.api_version.is_some() {
+            format!("{}?api-version={:?}", url, self.api_version)
+        } else {
+            url
+        };
+
+
         let client = Client::builder();
 
         let client = if let Some(timeout) = self.timeout {
